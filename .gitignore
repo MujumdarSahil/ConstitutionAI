@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.env
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ChromaDB (local vector store - large, user-generated)
+backend/chroma_db/
+
+# MongoDB data
+data/db/
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Secrets - never commit these!
+backend/.env
+
+# Large binary files (user must place their own)
+backend/data/constitution.pdf

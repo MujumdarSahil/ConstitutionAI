@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+motor
+pymongo
+chromadb
+sentence-transformers
+pymupdf
+groq
+google-generativeai
+python-dotenv
+pydantic
+sse-starlette
+httpx
