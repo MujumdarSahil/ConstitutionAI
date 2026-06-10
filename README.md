@@ -122,8 +122,8 @@ Now open `backend/.env` and fill in your keys:
 ```env
 GROQ_API_KEY=gsk_your_groq_key_here
 GEMINI_API_KEY=AIza_your_gemini_key_here
-MONGODB_URI=mongodb://localhost:27017
-DB_NAME=jarvis
+MONGODB_URI=your mongodb uri
+DB_NAME=your db name
 CHROMA_DB_PATH=./chroma_db
 PDF_PATH=./data/constitution.pdf
 ```
