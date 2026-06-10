@@ -16,6 +16,7 @@ ConstitutionAI uses Retrieval-Augmented Generation (RAG) to teach every constitu
 - 💾 **Session Persistence** — All progress saved in MongoDB; survives app restarts
 - 🔴 **Streaming Lessons** — SSE-powered live typing effect, no waiting for full response
 - 📅 **Progress Tracking** — Streak counter, heatmap calendar, weak topics dashboard
+- 🚀 **Single-Command Launch** — Start frontend + backend together with `python main.py`
 
 ---
 
@@ -25,7 +26,7 @@ ConstitutionAI uses Retrieval-Augmented Generation (RAG) to teach every constitu
 |-------------|---------|-------|
 | Python | 3.11+ | Required for match statements |
 | Node.js | 18+ | LTS recommended |
-| MongoDB | 6.0+ | Must be running locally |
+| MongoDB | 6.0+ | Must be running locally on `mongodb://localhost:27017` |
 | Groq API Key | — | Free at [console.groq.com](https://console.groq.com) |
 | Gemini API Key | — | Free at [aistudio.google.com](https://aistudio.google.com/app/apikey) |
 | Constitution PDF | — | See below |
@@ -58,106 +59,126 @@ Place the PDF at: `backend/data/constitution.pdf`
 
 ---
 
-## Setup
+## 🚀 Quick Start (Recommended)
 
-### 1. Clone the project
+Follow these steps **once** to set everything up. After that, a single command starts the whole project.
+
+### Step 1 — Clone the repository
+
 ```bash
 git clone <your-repo-url>
-cd constitutionai
+cd ConstitutionAI
 ```
 
-### 2. Start MongoDB
+### Step 2 — Start MongoDB
+
+MongoDB must be running before you launch the app.
+
 ```bash
-# Windows (if installed as service)
+# Windows — if installed as a service
 net start MongoDB
 
-# Or start manually
+# Windows — manual start
 mongod --dbpath C:\data\db
 
-# macOS/Linux
+# macOS / Linux
 mongod --dbpath /data/db
 ```
 
-### 3. Set up the backend
+> **Connection string used by the app:** `mongodb://localhost:27017`
+> Database name: `jarvis`
+
+### Step 3 — Create a Python virtual environment
 
 ```bash
-cd backend
-
-# Create and activate virtual environment
+# From the project root
 python -m venv venv
 
-# Windows
+# Activate — Windows
 venv\Scripts\activate
-# macOS/Linux
+
+# Activate — macOS / Linux
 source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-copy .env.example .env
-# Edit .env with your API keys
 ```
 
-Edit `backend/.env`:
+### Step 4 — Install Python dependencies
+
+```bash
+pip install -r backend/requirements.txt
 ```
+
+### Step 5 — Configure environment variables
+
+```bash
+# Windows
+copy backend\.env.example backend\.env
+
+# macOS / Linux
+cp backend/.env.example backend/.env
+```
+
+Now open `backend/.env` and fill in your keys:
+
+```env
 GROQ_API_KEY=gsk_your_groq_key_here
 GEMINI_API_KEY=AIza_your_gemini_key_here
 MONGODB_URI=mongodb://localhost:27017
-DB_NAME=constitutionai_db
+DB_NAME=jarvis
 CHROMA_DB_PATH=./chroma_db
 PDF_PATH=./data/constitution.pdf
 ```
 
-### 4. Place the Constitution PDF
+### Step 6 — Place the Constitution PDF
+
 ```
-constitutionai/
+ConstitutionAI/
 └── backend/
     └── data/
-        └── constitution.pdf  ← place your PDF here
+        └── constitution.pdf   ← place your PDF here
 ```
 
-### 5. Start the backend
-```bash
-cd backend
-uvicorn main:app --reload --port 8000
-```
-
-The backend will automatically:
-- Connect to MongoDB
-- Parse the PDF and build ChromaDB index (first launch takes 2–5 minutes)
-- Seed MongoDB with article progress records
-
-Watch the console for:
-```
-✅  MongoDB connected
-✅  Constitution PDF found
-✅  Auto-ingestion complete: N articles embedded
-🚀  ConstitutionAI ready at http://localhost:8000
-```
-
-### 6. Set up the frontend
+### Step 7 — Install frontend dependencies
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start dev server
-npm run dev
+cd ..
 ```
 
-Open http://localhost:5173
+---
+
+## ▶️ Running the Project
+
+Once setup is complete, **just run one command** from the project root:
+
+```bash
+python main.py
+```
+
+This will:
+- ✅ Start the **FastAPI backend** on `http://localhost:8000`
+- ✅ Start the **Vue/Vite frontend** on `http://localhost:5173`
+- ✅ Auto-install `node_modules` if they are missing
+- ✅ Create `backend/.env` from the example if it doesn't exist
+
+Open your browser at → **http://localhost:5173**
+
+Press **Ctrl+C** to stop both servers.
 
 ---
 
 ## First-Time Usage
 
 1. Open the app at **http://localhost:5173**
-2. The backend auto-triggers PDF ingestion on startup
-3. If you see a "Setup required" banner, click **Run Setup**
-4. Wait for the green "Setup complete!" message
+2. The backend auto-triggers PDF ingestion on startup (takes 2–5 minutes the first time)
+3. Watch the terminal for:
+   ```
+   ✅  MongoDB connected
+   ✅  Constitution PDF found
+   ✅  Auto-ingestion complete: N articles embedded
+   🚀  ConstitutionAI ready at http://localhost:8000
+   ```
+4. If you see a "Setup required" banner, click **Run Setup**
 5. Click **Start Today's Session** on the dashboard
 
 ---
@@ -165,12 +186,15 @@ Open http://localhost:5173
 ## Project Structure
 
 ```
-constitutionai/
+ConstitutionAI/
+├── main.py                      # ← Run this to start everything
+├── README.md
 ├── backend/
-│   ├── main.py                  # FastAPI entrypoint + startup checks
+│   ├── main.py                  # FastAPI app entrypoint
 │   ├── config.py                # Environment configuration
 │   ├── requirements.txt
-│   ├── .env.example
+│   ├── .env.example             # Copy this to .env
+│   ├── .env                     # Your secrets (not in git)
 │   ├── agents/
 │   │   ├── tutor_agent.py       # Constitutional law lesson generator
 │   │   ├── session_planner.py   # Session planning + motivational messages
@@ -229,15 +253,17 @@ constitutionai/
 | `/api/articles` | GET | All articles with progress |
 | `/api/articles/{id}/jump` | GET | Revision mode for an article |
 
-API docs: http://localhost:8000/docs
+API docs (Swagger UI): http://localhost:8000/docs
 
 ---
 
-## MongoDB Collections
+## MongoDB
 
-- `sessions` — Study session records
-- `article_progress` — Per-article progress, scores, cache
-- `test_results` — Quiz questions and answers
+| Setting | Value |
+|---------|-------|
+| Connection string | `mongodb://localhost:27017` |
+| Database name | `jarvis` |
+| Collections | `sessions`, `article_progress`, `test_results` |
 
 ---
 
@@ -245,12 +271,14 @@ API docs: http://localhost:8000/docs
 
 | Problem | Solution |
 |---------|----------|
-| MongoDB connection error | Run `mongod` or start MongoDB service |
+| MongoDB connection error | Run `mongod` or start MongoDB service — connection string: `mongodb://localhost:27017` |
 | PDF not found | Place PDF at `backend/data/constitution.pdf` |
-| API key errors | Check `.env` file, ensure keys are valid |
-| ChromaDB empty after setup | Run `POST /api/setup` or restart backend |
+| API key errors | Check `backend/.env`, ensure keys are valid |
+| ChromaDB empty after setup | Run `POST /api/setup` or restart the app |
 | Groq rate limit | Gemini fallback activates automatically |
 | Frontend can't reach backend | Ensure backend runs on port 8000 |
+| `npm` not found | Install Node.js 18+ from https://nodejs.org |
+| `python` not found | Ensure Python 3.11+ is installed and in PATH |
 
 ---
 
@@ -259,6 +287,12 @@ API docs: http://localhost:8000/docs
 - **Backend**: Python 3.11, FastAPI, Motor (async MongoDB)
 - **AI**: Groq (llama-3.3-70b-versatile) → Gemini (gemini-1.5-flash) failover
 - **Vector Store**: ChromaDB with all-MiniLM-L6-v2 embeddings
-- **Database**: MongoDB (local)
+- **Database**: MongoDB (local) — `mongodb://localhost:27017`
 - **Frontend**: Vue 3, Vite, Pinia, Vue Router
 - **PDF Parsing**: PyMuPDF (fitz)
+
+---
+
+## License
+
+See [LICENSE](LICENSE) for details.

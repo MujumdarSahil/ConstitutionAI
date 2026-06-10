@@ -239,13 +239,20 @@ class PDFIngestion:
                 chunk_type="article",
             ))
 
-        # Add schedule chunks
+        # Deduplicate schedule matches (keep first occurrence per schedule ID)
+        seen_schedules: dict[str, int] = {}  # sched_id -> index in schedule_matches
+        unique_schedule_matches = []
         for i, sched_match in enumerate(schedule_matches):
             ordinal = sched_match.group(1).upper()
             sched_num = SCHEDULE_ORDINALS.get(ordinal, i + 1)
             sched_id = f"schedule_{sched_num}"
+            if sched_id not in seen_schedules:
+                seen_schedules[sched_id] = len(unique_schedule_matches)
+                unique_schedule_matches.append((sched_id, sched_num, ordinal, sched_match))
 
-            end_pos = schedule_matches[i + 1].start() if i + 1 < len(schedule_matches) else len(text)
+        # Add schedule chunks
+        for i, (sched_id, sched_num, ordinal, sched_match) in enumerate(unique_schedule_matches):
+            end_pos = unique_schedule_matches[i + 1][3].start() if i + 1 < len(unique_schedule_matches) else len(text)
             sched_text = text[sched_match.start():end_pos].strip()
 
             chunks.append(ArticleChunk(

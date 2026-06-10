@@ -21,7 +21,7 @@ class Config:
 
     # MongoDB
     MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-    DB_NAME: str = os.getenv("DB_NAME", "constitutionai_db")
+    DB_NAME: str = os.getenv("DB_NAME", "jarvis")
 
     # Storage paths
     CHROMA_DB_PATH: str = os.getenv("CHROMA_DB_PATH", "./chroma_db")

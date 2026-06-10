@@ -33,10 +33,17 @@ class RAGPipeline:
         self._collection = None
         self._embedding_model = None
         self._is_ready = False
+        self._init_lock = asyncio.Lock()
 
     async def initialize(self) -> None:
-        """Set up ChromaDB client and embedding model (async wrapper)."""
-        await asyncio.get_event_loop().run_in_executor(None, self._sync_initialize)
+        """Set up ChromaDB client and embedding model (idempotent, concurrency-safe)."""
+        if self._is_ready:
+            return
+        async with self._init_lock:
+            # Double-checked locking: another coroutine may have finished while we waited
+            if self._is_ready:
+                return
+            await asyncio.get_event_loop().run_in_executor(None, self._sync_initialize)
 
     def _sync_initialize(self) -> None:
         """Synchronous initialization (run in thread executor)."""
@@ -90,7 +97,17 @@ class RAGPipeline:
         except Exception:
             pass
 
-        new_articles = [a for a in articles if a["article_id"] not in existing_ids]
+        # Also deduplicate within the incoming list itself (guard against duplicate IDs
+        # that can arise if the same heading appears multiple times in the PDF).
+        seen_new: set[str] = set()
+        deduped_articles: list[dict] = []
+        for a in articles:
+            aid = a["article_id"]
+            if aid not in existing_ids and aid not in seen_new:
+                seen_new.add(aid)
+                deduped_articles.append(a)
+
+        new_articles = deduped_articles
         if not new_articles:
             logger.info("All %d articles already indexed. Skipping.", len(articles))
             return 0
